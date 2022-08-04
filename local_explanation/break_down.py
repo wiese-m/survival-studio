@@ -12,7 +12,7 @@ class BreakDown:
         self.mean_prediction = self._get_mean_prediction()
         self._single_scores = self._get_single_scores()
         self._pairwise_scores = self._get_pairwise_scores() if allow_interactions else {}
-        self.results = self._get_results()  # need to be changed for interaction features like A:B
+        self.result = self._get_results()  # need to be changed for interaction features like A:B
 
     def _get_mean_prediction(self) -> float:
         return self.model.predict(self.X).mean()
@@ -44,8 +44,8 @@ class BreakDown:
 
     def plot(self) -> None:
         fig, ax = plt.subplots()
-        ax.step(self.results.cumulative[::-1], self.results.variable_name[::-1], where='post')
-        ax.scatter(self.results.cumulative[::-1], self.results.variable_name[::-1])
+        ax.step(self.result.cumulative[::-1], self.result.variable_name[::-1], where='post')
+        ax.scatter(self.result.cumulative[::-1], self.result.variable_name[::-1])
         ax.set_xlabel('risk score')
         fig.suptitle('Break Down')
         plt.show()
