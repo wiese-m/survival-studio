@@ -1,14 +1,18 @@
+from itertools import combinations
+
 import matplotlib.pyplot as plt
 import pandas as pd
 
 
 class BreakDown:
-    def __init__(self, model, X: pd.DataFrame, new_observation: pd.DataFrame) -> None:
+    def __init__(self, model, X: pd.DataFrame, new_observation: pd.DataFrame, allow_interactions: bool) -> None:
         self.model = model
         self.X = X
         self.new_observation = new_observation
         self.mean_prediction = self._get_mean_prediction()
-        self.results = self._get_results()
+        self._single_scores = self._get_single_scores()
+        self._pairwise_scores = self._get_pairwise_scores() if allow_interactions else {}
+        self.results = self._get_results()  # need to be changed for interaction features like A:B
 
     def _get_mean_prediction(self) -> float:
         return self.model.predict(self.X).mean()
@@ -18,19 +22,11 @@ class BreakDown:
         X[features] = self.new_observation[features].squeeze()
         return self.model.predict(X).mean()
 
-    def _get_score_for_feature(self, feature: str) -> float:
-        return self._get_expected_value_for_features([feature]) - self.mean_prediction
-
-    def _get_sorted_abs_scores(self) -> dict[str, float]:
-        scores = {feature: abs(self._get_score_for_feature(feature)) for feature in self.X.columns}
-        return dict(sorted(scores.items(), key=lambda i: i[1], reverse=True))
-
-    def _get_scores_ordering(self) -> list[str]:
-        sorted_scores = self._get_sorted_abs_scores()
-        return list(sorted_scores.keys())
+    def _get_single_scores(self) -> dict[str, float]:
+        return {feature: self._get_delta({feature}, {}) for feature in self.X.columns}
 
     def _get_results(self) -> pd.DataFrame:
-        ordering = self._get_scores_ordering()
+        ordering = list(self._get_sorted_proper_scores().keys())
         features = []
         values = []
         for feature in ordering:
@@ -53,3 +49,39 @@ class BreakDown:
         ax.set_xlabel('risk score')
         fig.suptitle('Break Down')
         plt.show()
+
+    def _get_delta(self, L: {str}, J: {str}) -> float:
+        X_copy1, X_copy2 = self.X.copy(), self.X.copy()
+        X_copy1[list(L.union(J))] = self.new_observation[list(L.union(J))].squeeze()
+        if J:
+            X_copy2[list(J)] = self.new_observation[list(J)].squeeze()
+        return self.model.predict(X_copy1).mean() - self.model.predict(X_copy2).mean()
+
+    def _get_interaction_delta(self, i: str, j: str) -> float:
+        return self._get_delta({i, j}, {}) - self._get_delta({i}, {}) - self._get_delta({j}, {})
+
+    def _get_pairwise_scores(self) -> dict[str, float]:
+        return {f'{i}:{j}': self._get_interaction_delta(i, j) for i, j in combinations(self.X.columns, 2)}
+
+    def _get_signif_interactions(self) -> list[str]:
+        signif_interactions = []
+        for feature, score in self._pairwise_scores.items():
+            single_features = feature.split(':')
+            if abs(score) > abs(self._single_scores[single_features[0]]) and \
+                    abs(score) > abs(self._single_scores[single_features[1]]):
+                signif_interactions.append(feature)
+        return signif_interactions
+
+    def _get_proper_features(self) -> list[str]:
+        signif_interactions = self._get_signif_interactions()
+        to_remove = [feature for feature in self._single_scores if any(feature in i for i in signif_interactions)]
+        return [f for f in list(self._single_scores.keys()) + signif_interactions if f not in to_remove]
+
+    def _get_sorted_proper_scores(self) -> dict[str, float]:
+        all_scores = self._single_scores | self._pairwise_scores
+        all_scores = {feature: score for feature, score in all_scores.items() if feature in self._get_proper_features()}
+        return self._sorted_dict_by_abs_values(all_scores)
+
+    @staticmethod
+    def _sorted_dict_by_abs_values(d: dict) -> dict:
+        return dict(sorted(d.items(), key=lambda i: abs(i[1]), reverse=True))
