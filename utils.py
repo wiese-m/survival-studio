@@ -1,4 +1,8 @@
+import random
+
 from dash import html
+
+from explainer import SurvExplainer
 
 
 def generate_table(dataframe, max_rows=10):
@@ -12,3 +16,7 @@ def generate_table(dataframe, max_rows=10):
             ]) for i in range(min(len(dataframe), max_rows))
         ])
     ])
+
+
+def choose_random_feature(explainer: SurvExplainer) -> str:
+    return random.choice(explainer.X.columns)
