@@ -1,5 +1,6 @@
+import dash_loading_spinners as dls
 import numpy as np
-from dash import Dash, html, dcc
+from dash import Dash, html, dcc, Input, Output
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
 from sksurv.datasets import load_gbsg2
@@ -7,7 +8,7 @@ from sksurv.ensemble import RandomSurvivalForest
 from sksurv.preprocessing import OneHotEncoder
 
 from explainer import SurvExplainer
-from utils import generate_table
+from utils import generate_table, choose_random_feature
 
 
 def setup_explainer() -> SurvExplainer:
@@ -37,21 +38,26 @@ def setup_explainer() -> SurvExplainer:
 
 def main() -> None:
     explainer = setup_explainer()
-    cpp = explainer.cp_profile('pnodes')
-    fig = cpp.plot()
 
     app = Dash(__name__)
 
     app.layout = html.Div(children=[
         html.H1(children='survivalStudio'),
-
+        html.H4(f'observation id = {explainer.new_observation.index[0]}'),
         generate_table(explainer.new_observation),
-
-        dcc.Graph(
-            id='example-graph',
-            figure=fig
-        )
+        dcc.Dropdown(
+            explainer.X.columns,
+            choose_random_feature(explainer),
+            id='feature-name'
+        ),
+        dls.Hash(dcc.Graph(id='cpp'))
     ])
+
+    @app.callback(
+        Output('cpp', 'figure'),
+        Input('feature-name', 'value'))
+    def update_cpp_graph(feature):
+        return explainer.cp_profile(str(feature)).plot()
 
     app.run_server(debug=True)
 
