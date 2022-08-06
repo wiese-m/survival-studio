@@ -1,7 +1,8 @@
 from itertools import combinations
 
-import matplotlib.pyplot as plt
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 
 
 class BreakDown:
@@ -12,7 +13,7 @@ class BreakDown:
         self.mean_prediction = self._get_mean_prediction()
         self._single_scores = self._get_single_scores()
         self._pairwise_scores = self._get_pairwise_scores() if allow_interactions else {}
-        self.result = self._get_results()  # need to be changed for interaction features like A:B
+        self.result = self._get_results()  # todo: need to be changed for interaction features like A:B
 
     def _get_mean_prediction(self) -> float:
         return self.model.predict(self.X).mean()
@@ -42,13 +43,16 @@ class BreakDown:
         results['contribution'] = results.cumulative.diff()
         return results
 
-    def plot(self) -> None:
-        fig, ax = plt.subplots()
-        ax.step(self.result.cumulative[::-1], self.result.variable_name[::-1], where='post')
-        ax.scatter(self.result.cumulative[::-1], self.result.variable_name[::-1])
-        ax.set_xlabel('risk score')
-        fig.suptitle('Break Down')
-        plt.show()
+    def plot(self, show: bool = False) -> go.Figure:
+        # todo: change to waterfall plot
+        fig = px.line(x=self.result.cumulative[::-1], y=self.result.variable_name[::-1], line_shape='hv')
+        fig.update_traces(mode='lines+markers')
+        fig.update_xaxes(title_text='risk score')
+        fig.update_yaxes(title_text='')
+        fig.update_layout(title_text='Break Down', width=600, height=400)
+        if show:
+            fig.show()
+        return fig
 
     def _get_delta(self, L: {str}, J: {str}) -> float:
         X_copy1, X_copy2 = self.X.copy(), self.X.copy()
