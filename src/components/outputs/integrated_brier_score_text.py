@@ -12,7 +12,7 @@ def render(app: Dash, explainer: SurvExplainer) -> html.Div:
         Input(ids.TIME_SLIDER, 'value')
     )
     def update_integrated_brier_score(times) -> str:
-        ibs = explainer.model_performance.integrated_brier_score(explainer.y, explainer.y, times)
+        ibs = explainer.model_performance.integrated_brier_score(times)
         return f'IBS({times}) = {ibs:.4f}'
 
     return html.Div(id=ids.INTEGRATED_BRIER_SCORE)

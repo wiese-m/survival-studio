@@ -20,7 +20,7 @@ class SurvExplainer:
         self.y = y
         self.new_observation = self.choose_random_observation()
         self.visualizer = Visualizer(self.model, self.X, self.new_observation)
-        self.model_performance = ModelPerformance(self.model, self.X)
+        self.model_performance = ModelPerformance(self.model, self.X, self.y)
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
         return self.model.predict(X)
