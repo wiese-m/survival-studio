@@ -5,7 +5,7 @@ from src.components import ids
 
 
 def render(explainer: SurvExplainer) -> html.Div:
-    event_times = explainer.model.event_times_
+    event_times = explainer.model_performance.event_times
 
     return html.Div(
         children=[

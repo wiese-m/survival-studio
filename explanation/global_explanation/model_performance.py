@@ -14,7 +14,8 @@ class ModelPerformance:
         self.model = model
         self.X_test = X_test
         self.y_test = y_test
-        self.survs = model.predict_survival_function(X_test)
+        self.survs = model.predict_survival_function(X_test)  # todo: uwzglednic SSVM itp.
+        self.event_times = self._event_times
 
     def harrell_cindex(self, X: pd.DataFrame = None, y: np.ndarray = None) -> float:
         X = X if X is not None else self.X_test
@@ -36,14 +37,15 @@ class ModelPerformance:
         times, score = brier_score(y_train, y_test, preds, time)
         return score[0]
 
-    def integrated_brier_score(self, times, y_train: np.ndarray = None, y_test: np.ndarray = None) -> float:
+    def integrated_brier_score(self, times=None, y_train: np.ndarray = None, y_test: np.ndarray = None) -> float:
         y_train = y_train if y_train is not None else self.y_test
         y_test = y_test if y_test is not None else self.y_test
+        times = times if times is not None else self.event_times
         preds = np.asarray([[surv_func(t) for t in times] for surv_func in self.survs])
         return integrated_brier_score(y_train, y_test, preds, times)
 
     def _get_bs_plot_df(self) -> pd.DataFrame:
-        df = pd.DataFrame(self.model.event_times_, columns=['event_time'])
+        df = pd.DataFrame(self.event_times, columns=['event_time'])
         df['brier_score'] = [self.brier_score(t) for t in df.event_time]
         return df
 
@@ -55,3 +57,7 @@ class ModelPerformance:
         if show:
             fig.show()
         return fig
+
+    @property
+    def _event_times(self) -> np.ndarray:
+        return self.survs[0].x
