@@ -6,7 +6,7 @@ from src.components import ids
 
 
 def render(explainer: SurvExplainer) -> html.Div:
-    event_times = explainer.model.event_times_
+    times = explainer.model_performance.proper_times
 
     return html.Div(
         children=[
@@ -14,10 +14,10 @@ def render(explainer: SurvExplainer) -> html.Div:
             dcc.Input(
                 id=ids.TIME_INPUT,
                 type='number',
-                placeholder=f'from {event_times.min()} to {event_times.max()}',
-                min=event_times.min(),
-                max=event_times.max(),
-                value=np.median(event_times)
+                placeholder=f'from {times.min()} to {times.max()}',
+                min=times.min(),
+                max=times.max(),
+                value=np.median(times)
             )
         ]
     )

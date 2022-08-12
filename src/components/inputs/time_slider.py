@@ -5,15 +5,15 @@ from src.components import ids
 
 
 def render(explainer: SurvExplainer) -> html.Div:
-    event_times = explainer.model_performance.event_times
+    times = explainer.model_performance.proper_times
 
     return html.Div(
         children=[
             html.H6('Time Slider for Integrated Brier Score'),
             dcc.RangeSlider(
-                event_times.min(),
-                event_times.max(),
-                value=[event_times.min(), event_times.max()],
+                times.min(),
+                times.max(),
+                value=[times.min(), times.max()],
                 id=ids.TIME_SLIDER,
                 tooltip={"placement": "bottom", "always_visible": True}
             )
