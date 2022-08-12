@@ -27,14 +27,25 @@ class CeterisParibus:
             data['risk_score'].append(self.new_prediction)
         return pd.DataFrame(data).sort_values(feature).reset_index(drop=True)
 
-    def plot(self, show: bool = False) -> go.Figure:
-        trace0 = go.Scatter(x=self.original_observation[self.feature], y=pd.Series(self.original_prediction), name='')
-        trace1 = go.Scatter(x=self.result[self.feature], y=self.result['risk_score'], name='')
+    def plot(self, is_categorical: bool = False, show: bool = False) -> go.Figure:
+        if not is_categorical:
+            trace0 = go.Scatter(x=self.original_observation[self.feature],
+                                y=pd.Series(self.original_prediction), name='')
+            trace1 = go.Scatter(x=self.result[self.feature], y=self.result['risk_score'], name='')
+        else:
+            trace0 = go.Bar(y=self.original_observation[self.feature], x=pd.Series(self.original_prediction),
+                            name='', offsetgroup=0, orientation='h')
+            trace1 = go.Bar(y=self.result[self.feature], x=self.result['risk_score'],
+                            name='', offsetgroup=0, orientation='h')
         fig = make_subplots()
         fig.add_trace(trace1)
         fig.add_trace(trace0)
-        fig.update_xaxes(title_text=self.feature)
-        fig.update_yaxes(title_text='risk score')
+        if not is_categorical:
+            fig.update_xaxes(title_text=self.feature)
+            fig.update_yaxes(title_text='risk score')
+        else:
+            fig.update_yaxes(title_text=self.feature)
+            fig.update_xaxes(title_text='risk score')
         fig.update_layout(title_text='Ceteris Paribus', width=400, height=300, showlegend=False)
         if show:
             fig.show()
