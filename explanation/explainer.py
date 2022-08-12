@@ -15,7 +15,7 @@ from explanation.tools.visualizer import Visualizer
 class SurvExplainer:
     def __init__(self, model, X: pd.DataFrame, y: np.ndarray, model_name: str = None) -> None:
         self.model = model
-        self.model_name = model_name if model_name is not None else self._get_model_name()
+        self.model_name = model_name if model_name is not None else self._model_name
         self.X = X
         self.y = y
         self.new_observation = self.choose_random_observation()
@@ -47,5 +47,6 @@ class SurvExplainer:
     def feature_importance(self, n_iter: int = 5, random_state: int = None) -> FeatureImportance:
         return FeatureImportance(self.model, self.X, self.y, n_iter, random_state)
 
-    def _get_model_name(self) -> str:
-        return str(self.model).split('(')[0]
+    @property
+    def _model_name(self) -> str:
+        return self.model.__class__.__name__
