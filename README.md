@@ -4,3 +4,5 @@ Survival Studio is a tool for automatic and interactive exploration of complex s
 
 Preview:
 ![img](misc/survival_studio_example.PNG)
+
+See the live example [here](https://survivalstudio.pythonanywhere.com/)!
