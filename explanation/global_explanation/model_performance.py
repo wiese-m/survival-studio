@@ -59,14 +59,14 @@ class ModelPerformance:
         df['brier_score'] = [self.brier_score(t) for t in df.time]
         return df
 
-    def plot_brier_score(self, show: bool = False) -> go.Figure:
+    def plot_brier_score(self, show: bool = False, **kwargs) -> go.Figure:
         plot_df = self._get_bs_plot_df()
         if plot_df.empty:
             return go.Figure()
         fig = px.line(data_frame=plot_df, x='time', y='brier_score')
         fig.update_xaxes(title_text='time')
         fig.update_yaxes(title_text='brier score')
-        fig.update_layout(title_text='Prediction Error over time', width=400, height=300)
+        fig.update_layout(title_text='Prediction Error over time', **kwargs)
         if show:
             fig.show()
         return fig

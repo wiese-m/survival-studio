@@ -25,7 +25,7 @@ class PartialDependence:
             data['avg_risk_score'].append(self.mean_prediction)
         return pd.DataFrame(data).sort_values(self.feature).reset_index(drop=True)
 
-    def plot(self, is_categorical: bool = False, show: bool = False) -> go.Figure:
+    def plot(self, is_categorical: bool = False, show: bool = False, **kwargs) -> go.Figure:
         if not is_categorical:
             fig = px.line(x=self.result[self.feature], y=self.result['avg_risk_score'])
             fig.update_xaxes(title_text=self.feature)
@@ -34,7 +34,7 @@ class PartialDependence:
             fig = px.bar(y=self.result[self.feature], x=self.result['avg_risk_score'], orientation='h')
             fig.update_yaxes(title_text=self.feature)
             fig.update_xaxes(title_text='avg risk score')
-        fig.update_layout(title_text=f'Partial Dependence', width=400, height=300)
+        fig.update_layout(title_text=f'Partial Dependence', **kwargs)
         if show:
             fig.show()
         return fig

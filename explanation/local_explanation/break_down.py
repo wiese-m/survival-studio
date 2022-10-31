@@ -43,13 +43,13 @@ class BreakDown:
         results['contribution'] = results.cumulative.diff()
         return results
 
-    def plot(self, show: bool = False) -> go.Figure:
+    def plot(self, show: bool = False, **kwargs) -> go.Figure:
         # todo: change to waterfall plot
         fig = px.line(x=self.result.cumulative[::-1], y=self.result.variable_name[::-1], line_shape='hv')
         fig.update_traces(mode='lines+markers')
         fig.update_xaxes(title_text='risk score')
         fig.update_yaxes(title_text='')
-        fig.update_layout(title_text='Break Down', width=400, height=300)
+        fig.update_layout(title_text='Break Down', **kwargs)
         if show:
             fig.show()
         return fig

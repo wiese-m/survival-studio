@@ -27,7 +27,7 @@ class CeterisParibus:
             data['risk_score'].append(self.new_prediction)
         return pd.DataFrame(data).sort_values(feature).reset_index(drop=True)
 
-    def plot(self, is_categorical: bool = False, show: bool = False) -> go.Figure:
+    def plot(self, is_categorical: bool = False, show: bool = False, **kwargs) -> go.Figure:
         if not is_categorical:
             trace0 = go.Scatter(x=self.original_observation[self.feature],
                                 y=pd.Series(self.original_prediction), name='')
@@ -46,7 +46,7 @@ class CeterisParibus:
         else:
             fig.update_yaxes(title_text=self.feature)
             fig.update_xaxes(title_text='risk score')
-        fig.update_layout(title_text='Ceteris Paribus', width=400, height=300, showlegend=False)
+        fig.update_layout(title_text='Ceteris Paribus', **kwargs)
         if show:
             fig.show()
         return fig

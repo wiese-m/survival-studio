@@ -19,11 +19,11 @@ class FeatureImportance(PermutationImportance):
              'fi_2std': 2 * self.feature_importances_std_}
         ).sort_values('feature_importance', ascending=False)
 
-    def plot(self, show: bool = False) -> go.Figure:
+    def plot(self, show: bool = False, **kwargs) -> go.Figure:
         fig = px.bar(self.result[::-1], x='feature_importance', y='feature_name', orientation='h', error_x='fi_2std')
         fig.update_xaxes(title_text='harrell c-index decrease')
         fig.update_yaxes(title_text='')
-        fig.update_layout(title_text='Permutation Feature Importance', width=400, height=300)
+        fig.update_layout(title_text='Permutation Feature Importance', **kwargs)
         if show:
             fig.show()
         return fig
