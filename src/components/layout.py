@@ -60,7 +60,7 @@ def create_layout(app: Dash, explainer: SurvExplainer) -> html.Div:
 
 
 def harrell_cindex_text(explainer: SurvExplainer) -> str:
-    return f"Harrel's C-index = {explainer.model_performance.harrell_cindex(explainer.X, explainer.y):.4f}"
+    return f"Harrell's C-index = {explainer.model_performance.harrell_cindex(explainer.X, explainer.y):.4f}"
 
 
 def uno_cindex_text(explainer: SurvExplainer) -> str:
