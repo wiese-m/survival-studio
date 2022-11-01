@@ -1,5 +1,6 @@
 spec = {
     'width': 600,
-    'height': 300,
-    'showlegend': False
+    'height': 400,
+    'showlegend': False,
+    'template': 'plotly'
 }

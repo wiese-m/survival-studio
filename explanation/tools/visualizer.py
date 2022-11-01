@@ -33,7 +33,8 @@ class Visualizer:
         return fig
 
     def plot_feature_distribution(self, feature: str, nbins: int = None, show: bool = False, **kwargs) -> go.Figure:
-        fig = px.histogram(self.X, x=feature, nbins=nbins)
+        fig = px.histogram(self.X, x=feature, nbins=nbins, )
+        fig.update_traces(marker_line_width=1, marker_line_color='black')
         fig.update_layout(title_text='Feature Distribution', **kwargs)
         if show:
             fig.show()
