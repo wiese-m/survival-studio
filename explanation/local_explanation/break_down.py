@@ -7,52 +7,77 @@ import plotly.graph_objects as go
 
 class BreakDown:
     def __init__(self, model, X: pd.DataFrame, new_observation: pd.DataFrame, allow_interactions: bool) -> None:
+        self._allow_interactions = allow_interactions
         self.model = model
         self.X = X
         self.new_observation = new_observation
         self.mean_prediction = self._get_mean_prediction()
         self._single_scores = self._get_single_scores()
         self._pairwise_scores = self._get_pairwise_scores() if allow_interactions else {}
-        self.result = self._get_results()  # todo: need to be changed for interaction features like A:B
+        self.result = self._get_results()
 
     def _get_mean_prediction(self) -> float:
         return self.model.predict(self.X).mean()
 
-    def _get_expected_value_for_features(self, features: list[str]) -> float:
-        X = self.X.copy()
-        X[features] = self.new_observation[features].squeeze()
-        return self.model.predict(X).mean()
+    # def _get_expected_value_for_features(self, features: list[str]) -> float:
+    #     X = self.X.copy()
+    #     X[features] = self.new_observation[features].squeeze()
+    #     return self.model.predict(X).mean()
 
     def _get_single_scores(self) -> dict[str, float]:
         return {feature: self._get_delta({feature}, {}) for feature in self.X.columns}
 
+    # def _get_results_legacy(self) -> pd.DataFrame:
+    #     ordering = list(self._get_sorted_proper_scores().keys())
+    #     features = []
+    #     values = []
+    #     for feature in ordering:
+    #         features.append(feature)
+    #         values.append(self._get_expected_value_for_features(features))
+    #     results = pd.DataFrame({'variable_name': ordering,
+    #                             'variable_value': self.new_observation[ordering].values[0],
+    #                             'cumulative': values})
+    #     intercept = pd.DataFrame([['intercept', self.mean_prediction, self.mean_prediction]], columns=results.columns)
+    #     new_prediction = self.model.predict(self.new_observation)[0]
+    #     prediction = pd.DataFrame([['prediction', new_prediction, new_prediction]], columns=results.columns)
+    #     results = pd.concat([intercept, results, prediction]).reset_index(drop=True)
+    #     results['contribution'] = results.cumulative.diff()
+    #     return results
+
     def _get_results(self) -> pd.DataFrame:
-        ordering = list(self._get_sorted_proper_scores().keys())
-        features = []
-        values = []
-        for feature in ordering:
-            features.append(feature)
-            values.append(self._get_expected_value_for_features(features))
-        results = pd.DataFrame({'variable_name': ordering,
-                                'variable_value': self.new_observation[ordering].values[0],
-                                'cumulative': values})
-        intercept = pd.DataFrame([['intercept', self.mean_prediction, self.mean_prediction]], columns=results.columns)
-        new_prediction = self.model.predict(self.new_observation)[0]
-        prediction = pd.DataFrame([['prediction', new_prediction, new_prediction]], columns=results.columns)
-        results = pd.concat([intercept, results, prediction]).reset_index(drop=True)
-        results['contribution'] = results.cumulative.diff()
-        return results
+        data_dict = {'intercept': self.mean_prediction} | self._get_sorted_proper_scores() | {'prediction': 0}
+        return pd.DataFrame([data_dict]) \
+            .T \
+            .reset_index() \
+            .rename(columns={'index': 'variable_name', 0: 'contribution'}) \
+            .assign(cum_contribution=lambda x: x.contribution.cumsum())
 
     def plot(self, show: bool = False, **kwargs) -> go.Figure:
         # todo: change to waterfall plot
-        fig = px.line(x=self.result.cumulative[::-1], y=self.result.variable_name[::-1], line_shape='hv')
+        fig = px.line(x=self.result.cum_contribution[::-1], y=self.result.variable_name[::-1], line_shape='hv')
         fig.update_traces(mode='lines+markers')
         fig.update_xaxes(title_text='risk score')
         fig.update_yaxes(title_text='')
-        fig.update_layout(title_text='Break Down', **kwargs)
+        title = 'Break Down' if not self._allow_interactions else 'interaction Break Down'
+        fig.update_layout(title_text=title, **kwargs)
         if show:
             fig.show()
         return fig
+
+    # def plot(self, show: bool = False, **kwargs) -> go.Figure:
+    #     fig = go.Figure(go.Waterfall(
+    #         name="2018", orientation="h",
+    #         y=self.result.variable_name,
+    #         x=self.result.cum_contribution,
+    #         connector={"mode": "between", "line": {"width": 4, "color": "rgb(0, 0, 0)", "dash": "solid"}}
+    #     ))
+    #     fig.update_xaxes(title_text='risk score')
+    #     fig.update_yaxes(title_text='')
+    #     title = 'Break Down' if not self._allow_interactions else 'interaction Break Down'
+    #     fig.update_layout(title_text=title, **kwargs)
+    #     if show:
+    #         fig.show()
+    #     return fig
 
     def _get_delta(self, L: {str}, J: {str}) -> float:
         X_copy1, X_copy2 = self.X.copy(), self.X.copy()
