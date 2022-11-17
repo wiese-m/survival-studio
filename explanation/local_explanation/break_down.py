@@ -16,45 +16,9 @@ class BreakDown:
         self._pairwise_scores = self._get_pairwise_scores() if allow_interactions else {}
         self.result = self._get_results()
 
-    def _get_mean_prediction(self) -> float:
-        return self.model.predict(self.X).mean()
-
-    # def _get_expected_value_for_features(self, features: list[str]) -> float:
-    #     X = self.X.copy()
-    #     X[features] = self.new_observation[features].squeeze()
-    #     return self.model.predict(X).mean()
-
-    def _get_single_scores(self) -> dict[str, float]:
-        return {feature: self._get_delta({feature}, {}) for feature in self.X.columns}
-
-    # def _get_results_legacy(self) -> pd.DataFrame:
-    #     ordering = list(self._get_sorted_proper_scores().keys())
-    #     features = []
-    #     values = []
-    #     for feature in ordering:
-    #         features.append(feature)
-    #         values.append(self._get_expected_value_for_features(features))
-    #     results = pd.DataFrame({'variable_name': ordering,
-    #                             'variable_value': self.new_observation[ordering].values[0],
-    #                             'cumulative': values})
-    #     intercept = pd.DataFrame([['intercept', self.mean_prediction, self.mean_prediction]], columns=results.columns)
-    #     new_prediction = self.model.predict(self.new_observation)[0]
-    #     prediction = pd.DataFrame([['prediction', new_prediction, new_prediction]], columns=results.columns)
-    #     results = pd.concat([intercept, results, prediction]).reset_index(drop=True)
-    #     results['contribution'] = results.cumulative.diff()
-    #     return results
-
-    def _get_results(self) -> pd.DataFrame:
-        data_dict = {'intercept': self.mean_prediction} | self._get_sorted_proper_scores() | {'prediction': 0}
-        return pd.DataFrame([data_dict]) \
-            .T \
-            .reset_index() \
-            .rename(columns={'index': 'variable_name', 0: 'contribution'}) \
-            .assign(cum_contribution=lambda x: x.contribution.cumsum())
-
     def plot(self, show: bool = False, **kwargs) -> go.Figure:
         # todo: change to waterfall plot
-        fig = px.line(x=self.result.cum_contribution[::-1], y=self.result.variable_name[::-1], line_shape='hv')
+        fig = px.line(x=self.result.break_down[::-1], y=self.result.variable_name[::-1], line_shape='hv')
         fig.update_traces(mode='lines+markers')
         fig.update_xaxes(title_text='risk score')
         fig.update_yaxes(title_text='')
@@ -64,22 +28,21 @@ class BreakDown:
             fig.show()
         return fig
 
-    # def plot(self, show: bool = False, **kwargs) -> go.Figure:
-    #     fig = go.Figure(go.Waterfall(
-    #         name="2018", orientation="h",
-    #         y=self.result.variable_name,
-    #         x=self.result.cum_contribution,
-    #         connector={"mode": "between", "line": {"width": 4, "color": "rgb(0, 0, 0)", "dash": "solid"}}
-    #     ))
-    #     fig.update_xaxes(title_text='risk score')
-    #     fig.update_yaxes(title_text='')
-    #     title = 'Break Down' if not self._allow_interactions else 'interaction Break Down'
-    #     fig.update_layout(title_text=title, **kwargs)
-    #     if show:
-    #         fig.show()
-    #     return fig
+    def _get_mean_prediction(self) -> float:
+        return self.model.predict(self.X).mean()
+
+    def _get_expected_value_for_features(self, features: list[str]) -> float:
+        X = self.X.copy()
+        X[features] = self.new_observation[features].squeeze()
+        return self.model.predict(X).mean()
+
+    def _get_single_scores(self) -> dict[str, float]:
+        return {feature: self._get_delta({feature}, {}) for feature in self.X.columns}
 
     def _get_delta(self, L: {str}, J: {str}) -> float:
+        assert all([x in self.X.columns for x in L])
+        assert all([x in self.X.columns for x in J])
+        assert L.isdisjoint(J)
         X_copy1, X_copy2 = self.X.copy(), self.X.copy()
         X_copy1[list(L.union(J))] = self.new_observation[list(L.union(J))].squeeze()
         if J:
@@ -106,11 +69,43 @@ class BreakDown:
         to_remove = [feature for feature in self._single_scores if any(feature in i for i in signif_interactions)]
         return [f for f in list(self._single_scores.keys()) + signif_interactions if f not in to_remove]
 
-    def _get_sorted_proper_scores(self) -> dict[str, float]:
+    def _get_sorted_proper_scores(self, reverse: bool = True) -> dict[str, float]:
         all_scores = self._single_scores | self._pairwise_scores
         all_scores = {feature: score for feature, score in all_scores.items() if feature in self._get_proper_features()}
-        return self._sorted_dict_by_abs_values(all_scores)
+        return self._sorted_dict_by_abs_values(all_scores, reverse)
 
     @staticmethod
-    def _sorted_dict_by_abs_values(d: dict) -> dict:
-        return dict(sorted(d.items(), key=lambda i: abs(i[1]), reverse=True))
+    def _sorted_dict_by_abs_values(d: dict, reverse: bool) -> dict:
+        return dict(sorted(d.items(), key=lambda i: abs(i[1]), reverse=reverse))
+
+    def _get_results(self) -> pd.DataFrame:
+        vimp_df = pd.DataFrame([self._get_vimp()]).T[::-1].reset_index() \
+            .rename(columns={'index': 'variable_name', 0: 'vimp'})
+        vimp_df.loc[-1] = ['intercept', self.mean_prediction]
+        vimp_df = vimp_df.sort_index().reset_index(drop=True)
+        vimp_df['break_down'] = vimp_df.vimp.cumsum()
+        return vimp_df
+
+    def _get_vimp(self) -> dict[str, float]:
+        vimp = {}
+        previous_features = []
+        scores = self._get_sorted_proper_scores(reverse=False)
+        for feature, score in scores.items():
+            if ':' not in feature:
+                vimp[feature] = self._get_delta({feature}, set(previous_features))  # EMA BD (6.9)
+                previous_features.append(feature)
+            else:  # interaction A:B
+                features = feature.split(':')
+                vimp[feature] = self._get_delta(set(features), set(previous_features))  # EMA BD (6.9)
+                previous_features.append(features)
+            previous_features = self._flatten(previous_features)
+        return vimp
+
+    def _flatten(self, list_: list) -> list:
+        result = []
+        for x in list_:
+            if isinstance(x, list):
+                result.extend(self._flatten(x))
+            else:
+                result.append(x)
+        return result
