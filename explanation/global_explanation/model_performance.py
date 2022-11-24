@@ -11,6 +11,7 @@ from sksurv.metrics import (
 from explanation.tools.model_enum import SurvivalModel
 
 
+# todo: need to be changed if model cant predict survival function
 class ModelPerformance:
     def __init__(self, model, X_test: pd.DataFrame, y_test: np.ndarray) -> None:
         self.model = model
