@@ -19,9 +19,9 @@ class FeatureImportance(PermutationImportance):
         ordering = np.mean(self.result, axis=0).sort_values().index
         fig = px.box(result_long, x='value', y='feature')
         fig.update_yaxes(title_text='', categoryorder='array', categoryarray=ordering)
-        fig.update_xaxes(title_text="harrell's c-index decrease")
+        fig.update_xaxes(title_text="Harrell's c-index decrease")
         fig.update_traces(boxmean=True)
-        fig.update_layout(**kwargs)
+        fig.update_layout(title_text='Permutation Feature Importance', **kwargs)
         if show:
             fig.show()
         return fig

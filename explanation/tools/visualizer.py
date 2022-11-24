@@ -15,8 +15,7 @@ class Visualizer:
         fig = px.line(x=surv[0].x, y=surv[0].y, line_shape='hv')
         fig.update_xaxes(title_text='time')
         fig.update_yaxes(title_text='survival probability')
-        fig.update_layout(yaxis_range=[0, 1])
-        fig.update_layout(**kwargs)
+        fig.update_layout(title_text='Survival Function', yaxis_range=[0, 1], **kwargs)
         if show:
             fig.show()
         return fig
@@ -27,7 +26,7 @@ class Visualizer:
         fig = px.line(x=chf[0].x, y=chf[0].y, line_shape='hv')
         fig.update_xaxes(title_text='time')
         fig.update_yaxes(title_text='cumulative hazard')
-        fig.update_layout(**kwargs)
+        fig.update_layout(title_text='Cumulative Hazard Function', **kwargs)
         if show:
             fig.show()
         return fig
