@@ -64,6 +64,7 @@ class BreakDown:
                 signif_interactions.append(feature)
         return signif_interactions
 
+    # todo: what if there are 2 signif interactions A:B & A:C
     def _get_proper_features(self) -> list[str]:
         signif_interactions = self._get_signif_interactions()
         to_remove = [feature for feature in self._single_scores if any(feature in i for i in signif_interactions)]

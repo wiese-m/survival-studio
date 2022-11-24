@@ -6,7 +6,7 @@ from src.components.layout import create_layout
 
 
 def main() -> None:
-    explainer = ex.setup_rsf_brca_explainer(balanced=True)
+    explainer = ex.setup_rsf_brca_explainer()
     app = Dash(external_stylesheets=[BOOTSTRAP])
     app.title = "Survival Studio"
     app.layout = create_layout(app, explainer)
