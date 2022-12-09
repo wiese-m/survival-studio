@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -19,9 +20,19 @@ class CeterisParibus:
     def fit(self, feature: str, value) -> None:
         self._new_observation[feature] = value
 
+    @staticmethod
+    def _prepare_values(X: pd.DataFrame, feature: str) -> np.ndarray:
+        if X[feature].dtype in (np.int64, int):
+            min_, max_ = X[feature].min(), X[feature].max()
+            return np.unique(np.linspace(min_, max_, 100, dtype=int))
+        elif X[feature].dtype in (np.float64, float):
+            min_, max_ = X[feature].min(), X[feature].max()
+            return np.linspace(min_, max_, 100)
+        return X[feature].unique()
+
     def _get_result(self, X: pd.DataFrame, feature: str) -> pd.DataFrame:
         data = {feature: [], 'risk_score': []}
-        for value in X[feature].unique():
+        for value in self._prepare_values(X, feature):
             self.fit(feature, value)
             data[feature].append(value)
             data['risk_score'].append(self.new_prediction)
@@ -31,7 +42,8 @@ class CeterisParibus:
         if not is_categorical:
             trace0 = go.Scatter(x=self.original_observation[self.feature],
                                 y=pd.Series(self.original_prediction), name='')
-            trace1 = go.Scatter(x=self.result[self.feature], y=self.result['risk_score'], name='')
+            trace1 = go.Scatter(x=self.result[self.feature], y=self.result['risk_score'],
+                                name='', marker=dict(opacity=0))
         else:
             trace0 = go.Bar(y=self.original_observation[self.feature], x=pd.Series(self.original_prediction),
                             name='', offsetgroup=0, orientation='h')

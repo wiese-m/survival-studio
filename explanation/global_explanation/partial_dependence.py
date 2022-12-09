@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -17,9 +18,18 @@ class PartialDependence:
     def fit(self, value) -> None:
         self.X[self.feature] = value
 
+    def _prepare_values(self) -> np.ndarray:
+        if self.X[self.feature].dtype in (np.int64, int):
+            min_, max_ = self.X[self.feature].min(), self.X[self.feature].max()
+            return np.unique(np.linspace(min_, max_, 100, dtype=int))
+        elif self.X[self.feature].dtype in (np.float64, float):
+            min_, max_ = self.X[self.feature].min(), self.X[self.feature].max()
+            return np.linspace(min_, max_, 100)
+        return self.X[self.feature].unique()
+
     def _get_result(self) -> pd.DataFrame:
         data = {self.feature: [], 'avg_risk_score': []}
-        for value in self.X[self.feature].unique():
+        for value in self._prepare_values():
             self.fit(value)
             data[self.feature].append(value)
             data['avg_risk_score'].append(self.mean_prediction)

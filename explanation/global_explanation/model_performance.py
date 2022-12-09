@@ -56,7 +56,8 @@ class ModelPerformance:
     def _get_bs_plot_df(self) -> pd.DataFrame:
         if self.survs is None:
             return pd.DataFrame()
-        df = pd.DataFrame(self.proper_times, columns=['time'])
+        min_, max_ = np.min(self.proper_times), np.max(self.proper_times)
+        df = pd.DataFrame(np.unique(np.linspace(min_, max_, 1000, dtype=int)), columns=['time'])
         df['brier_score'] = [self.brier_score(t) for t in df.time]
         return df
 
