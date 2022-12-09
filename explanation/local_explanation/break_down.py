@@ -1,7 +1,6 @@
 from itertools import combinations
 
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 
 
@@ -17,9 +16,16 @@ class BreakDown:
         self.result = self._get_results()
 
     def plot(self, show: bool = False, **kwargs) -> go.Figure:
-        # todo: change to waterfall plot
-        fig = px.line(x=self.result.break_down[::-1], y=self.result.variable_name[::-1], line_shape='hv')
-        fig.update_traces(mode='lines+markers')
+        fig = go.Figure()
+        measure = ['relative'] * self.result.shape[0]
+        measure[0] = 'absolute'
+        measure[-1] = 'total'
+        fig = fig.add_waterfall(
+            x=self.result.vimp,
+            y=self.result.variable_name,
+            orientation='h',
+            measure=measure
+        )
         fig.update_xaxes(title_text='risk score')
         fig.update_yaxes(title_text='')
         title = 'Break Down' if not self._allow_interactions else 'interaction Break Down'
@@ -83,6 +89,7 @@ class BreakDown:
         vimp_df = pd.DataFrame([self._get_vimp()]).T[::-1].reset_index() \
             .rename(columns={'index': 'variable_name', 0: 'vimp'})
         vimp_df.loc[-1] = ['intercept', self.mean_prediction]
+        vimp_df.loc[999] = ['prediction', 0]
         vimp_df = vimp_df.sort_index().reset_index(drop=True)
         vimp_df['break_down'] = vimp_df.vimp.cumsum()
         return vimp_df
