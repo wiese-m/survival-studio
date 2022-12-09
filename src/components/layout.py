@@ -54,7 +54,10 @@ def create_layout(app: Dash, explainer: SurvExplainer) -> html.Div:
                 ]
             ),
             dbc.Row(
-                dbc.Col(observation_table.render(app, explainer))
+                [
+                    dbc.Col(observation_table.render(app, explainer)),
+                    dbc.Col()
+                ]
             )
         ]
     )

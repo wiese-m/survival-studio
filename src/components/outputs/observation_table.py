@@ -1,5 +1,5 @@
 import pandas as pd
-from dash import Dash, html
+from dash import Dash, html, dash_table
 from dash.dependencies import Input, Output
 
 from explanation.explainer import SurvExplainer
@@ -16,7 +16,11 @@ def render(app: Dash, explainer: SurvExplainer) -> html.Div:
     def update_observation_table(new_observation_id: int) -> html.Div:
         new_observation = ut.make_single_observation_by_id(explainer.X, new_observation_id).round(2)
         children = [
-            generate_table(new_observation, 1)
+            dash_table.DataTable(
+                data=new_observation.to_dict('records'),
+                columns=[{"name": i, "id": i} for i in new_observation.columns],
+                page_size=1
+            )
         ]
         return html.Div(children=children, id=ids.OBSERVATION_TABLE)
 
