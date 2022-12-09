@@ -1,6 +1,10 @@
+from typing import List
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+
+from explanation.tools.utils import make_single_observation_by_id
 
 
 class Visualizer:
@@ -32,9 +36,21 @@ class Visualizer:
         return fig
 
     def plot_feature_distribution(self, feature: str, nbins: int = None, show: bool = False, **kwargs) -> go.Figure:
-        fig = px.histogram(self.X, x=feature, nbins=nbins, )
+        fig = px.histogram(self.X, x=feature, nbins=nbins)
         fig.update_traces(marker_line_width=1, marker_line_color='black')
         fig.update_layout(title_text='Feature Distribution', **kwargs)
         if show:
             fig.show()
         return fig
+
+    def plot_risk_scores_distribution(self, nbins: int = None, show: bool = False, **kwargs) -> go.Figure:
+        fig = px.histogram(self._get_risk_scores(), nbins=nbins)
+        fig.update_xaxes(title_text='risk score')
+        fig.update_traces(marker_line_width=1, marker_line_color='black')
+        fig.update_layout(title_text='Risk Scores Distribution', **kwargs)
+        if show:
+            fig.show()
+        return fig
+
+    def _get_risk_scores(self) -> List[float]:
+        return [float(self.model.predict(make_single_observation_by_id(self.X, id_))) for id_ in self.X.index]
