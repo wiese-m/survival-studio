@@ -9,7 +9,7 @@ from scipy.stats import spearmanr
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
 from sksurv.datasets import load_gbsg2
-from sksurv.ensemble import RandomSurvivalForest, GradientBoostingSurvivalAnalysis
+from sksurv.ensemble import RandomSurvivalForest
 from sksurv.linear_model import CoxPHSurvivalAnalysis
 from sksurv.preprocessing import OneHotEncoder
 
@@ -42,6 +42,9 @@ def setup_rsf_gbsg2_explainer(random_state: int = 2022) -> SurvExplainer:
 def _prepare_brca_data(data_path: str = 'data/', balanced: bool = False, random_state: int = 2022) -> tuple:
     brca = pd.read_csv(data_path + 'brca-v2.csv', index_col=0)
 
+    brca['pos_lymphnodes'] = brca.pos_lymphnodes.astype(np.int64)
+    brca['tumor_weight'] = brca.tumor_weight.astype(np.int64)
+
     X = brca.drop(columns=['time', 'status'])
     stage = X.loc[:, "stage"].astype(object).values[:, np.newaxis]
     stage_num = OrdinalEncoder(categories=[['I', 'II', 'III']]).fit_transform(stage)
@@ -71,7 +74,6 @@ def _prepare_brca_data(data_path: str = 'data/', balanced: bool = False, random_
     if balanced:
         X_smote, y_smote = X_train.copy(), y_train['status'].copy()
         X_smote['time'] = y_train['time'].astype(np.int64)
-        X_smote['pos_lymphnodes'] = X_smote.pos_lymphnodes.astype(np.int64)
         sm = SMOTE(random_state=random_state)
         X_train, y_train = sm.fit_resample(X_smote, y_smote)
         y_train = np.array(list(zip(y_train, X_train.time)), dtype=[('status', '?'), ('time', '<f8')])
@@ -84,14 +86,6 @@ def setup_rsf_brca_explainer(data_path: str = 'data/',
                              balanced: bool = False,
                              random_state: int = 2022) -> SurvExplainer:
     X_train, X_test, y_train, y_test = _prepare_brca_data(data_path, balanced, random_state)
-    # rsf = RandomSurvivalForest(n_estimators=250,
-    #                            max_depth=4,
-    #                            min_samples_split=10,
-    #                            min_samples_leaf=15,
-    #                            max_features="sqrt",
-    #                            oob_score=True,
-    #                            n_jobs=-1,
-    #                            random_state=random_state)
     rsf = RandomSurvivalForest(n_jobs=-1, random_state=random_state)
     rsf.fit(X_train, y_train)
     return SurvExplainer(rsf, X_test, y_test)
@@ -104,13 +98,3 @@ def setup_coxph_brca_explainer(data_path: str = 'data/',
     coxph = CoxPHSurvivalAnalysis()
     coxph.fit(X_train, y_train)
     return SurvExplainer(coxph, X_test, y_test)
-
-
-def setup_gbm_brca_explainer(loss: str = 'coxph',
-                             data_path: str = 'data/',
-                             balanced: bool = False,
-                             random_state: int = 2022) -> SurvExplainer:
-    X_train, X_test, y_train, y_test = _prepare_brca_data(data_path, balanced, random_state)
-    gbm = GradientBoostingSurvivalAnalysis(loss=loss)
-    gbm.fit(X_train, y_train)
-    return SurvExplainer(gbm, X_test, y_test)
