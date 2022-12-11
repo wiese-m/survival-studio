@@ -9,7 +9,7 @@ from scipy.stats import spearmanr
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
 from sksurv.datasets import load_gbsg2
-from sksurv.ensemble import RandomSurvivalForest
+from sksurv.ensemble import RandomSurvivalForest, GradientBoostingSurvivalAnalysis
 from sksurv.linear_model import CoxPHSurvivalAnalysis
 from sksurv.preprocessing import OneHotEncoder
 
@@ -98,3 +98,13 @@ def setup_coxph_brca_explainer(data_path: str = 'data/',
     coxph = CoxPHSurvivalAnalysis()
     coxph.fit(X_train, y_train)
     return SurvExplainer(coxph, X_test, y_test)
+
+
+def setup_gbm_brca_explainer(loss='coxph',
+                             data_path: str = 'data/',
+                             balanced: bool = False,
+                             random_state: int = 2022) -> SurvExplainer:
+    X_train, X_test, y_train, y_test = _prepare_brca_data(data_path, balanced, random_state)
+    gbm = GradientBoostingSurvivalAnalysis(loss=loss, random_state=random_state)
+    gbm.fit(X_train, y_train)
+    return SurvExplainer(gbm, X_test, y_test)
