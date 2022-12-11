@@ -1,4 +1,4 @@
-from itertools import combinations
+from itertools import combinations, compress
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -70,7 +70,6 @@ class BreakDown:
                 signif_interactions.append(feature)
         return signif_interactions
 
-    # todo: what if there are 2 signif interactions A:B & A:C
     def _get_proper_features(self) -> list[str]:
         signif_interactions = self._get_signif_interactions()
         to_remove = [feature for feature in self._single_scores if any(feature in i for i in signif_interactions)]
@@ -97,15 +96,15 @@ class BreakDown:
     def _get_vimp(self) -> dict[str, float]:
         vimp = {}
         previous_features = []
-        scores = self._get_sorted_proper_scores(reverse=False)
-        for feature, score in scores.items():
+        features = self._get_proper_features_for_vimp(self._get_sorted_proper_scores())
+        for feature in features[::-1]:
             if ':' not in feature:
-                vimp[feature] = self._get_delta({feature}, set(previous_features))  # EMA BD (6.9)
+                vimp[feature] = self._get_delta({feature}, set(previous_features))
                 previous_features.append(feature)
-            else:  # interaction A:B
-                features = feature.split(':')
-                vimp[feature] = self._get_delta(set(features), set(previous_features))  # EMA BD (6.9)
-                previous_features.append(features)
+            else:  # Interaction A:B
+                features_ = feature.split(':')
+                vimp[feature] = self._get_delta(set(features_), set(previous_features))
+                previous_features.append(features_)
             previous_features = self._flatten(previous_features)
         return vimp
 
@@ -117,3 +116,17 @@ class BreakDown:
             else:
                 result.append(x)
         return result
+
+    def _get_proper_features_for_vimp(self, sorted_proper_scores: dict[str, float]) -> list[str]:
+        checks = []
+        features = list(sorted_proper_scores.keys())
+        for i, feature in enumerate(features):
+            checks.append([f in features[i - 1] for f in feature.split(':')])
+        checks = [(i, self._negate(check)) for i, check in enumerate(checks) if any(check)]
+        for check in checks:
+            features[check[0]] = list(compress(features[check[0]].split(':'), check[1]))[0]
+        return features
+
+    @staticmethod
+    def _negate(boolean_list: list[bool]) -> list[bool]:
+        return [not i for i in boolean_list]
