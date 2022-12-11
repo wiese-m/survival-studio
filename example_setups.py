@@ -75,7 +75,7 @@ def _prepare_brca_data(data_path: str = 'data/', balanced: bool = False, random_
     return X_train, X_test, y_train, y_test
 
 
-# Default RSF model based on BRCA data
+# Default RSF model explainer based on BRCA data
 def setup_rsf_brca_explainer(data_path: str = 'data/',
                              balanced: bool = False,
                              random_state: int = 2022) -> SurvExplainer:
@@ -85,7 +85,7 @@ def setup_rsf_brca_explainer(data_path: str = 'data/',
     return SurvExplainer(rsf, X_test, y_test)
 
 
-# Default CoxPH model based on BRCA data
+# Default CoxPH model explainer based on BRCA data
 def setup_coxph_brca_explainer(data_path: str = 'data/',
                                balanced: bool = False,
                                random_state: int = 2022) -> SurvExplainer:
@@ -95,7 +95,7 @@ def setup_coxph_brca_explainer(data_path: str = 'data/',
     return SurvExplainer(coxph, X_test, y_test)
 
 
-# Default GBM model based on BRCA data
+# Default GBM model explainer based on BRCA data
 def setup_gbm_brca_explainer(loss='coxph',
                              data_path: str = 'data/',
                              balanced: bool = False,
