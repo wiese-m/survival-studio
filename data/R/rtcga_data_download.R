@@ -1,8 +1,10 @@
+# Load the necessary R packages
 library(BiocManager)
 library(RTCGA)
 library(RTCGA.clinical)
 library(RTCGA.mRNA)
 
+# Define the list of clinical data to extract
 to_extract <- c(
   "patient.gender",
   "patient.age_at_initial_pathologic_diagnosis",
@@ -20,8 +22,10 @@ to_extract <- c(
   "patient.drugs.drug.therapy_ongoing"
 )
 
+# Extract the clinical and mRNA data (gene expressions)
 brca_clinical <- survivalTCGA(BRCA.clinical, extract.cols = to_extract)
 brca_mrna <- expressionsTCGA(BRCA.mRNA)
 
+# Save the extracted data to CSV files
 write.csv(brca_clinical, 'brca_clinical.csv')
 write.csv(brca_mrna, 'brca_mrna.csv')
