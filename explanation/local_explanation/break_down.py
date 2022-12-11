@@ -121,11 +121,14 @@ class BreakDown:
         checks = []
         features = list(sorted_proper_scores.keys())
         for i, feature in enumerate(features):
-            checks.append([f in features[i - 1] for f in feature.split(':')])
+            checks.append([f in features[i - 1] or f in features[i - 2] for f in feature.split(':')])
         checks = [(i, self._negate(check)) for i, check in enumerate(checks) if any(check)]
         for check in checks:
-            features[check[0]] = list(compress(features[check[0]].split(':'), check[1]))[0]
-        return features
+            try:
+                features[check[0]] = list(compress(features[check[0]].split(':'), check[1]))[0]
+            except IndexError:
+                features[check[0]] = None
+        return [feature for feature in features if feature is not None]
 
     @staticmethod
     def _negate(boolean_list: list[bool]) -> list[bool]:

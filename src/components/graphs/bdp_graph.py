@@ -17,7 +17,7 @@ def render(app: Dash, explainer: SurvExplainer) -> html.Div:
         fig = explainer \
             .bd_profile(
                 new_observation=ut.make_single_observation_by_id(explainer.X, new_observation_id),
-                allow_interactions=False  # todo: add interaction to choose
+                allow_interactions=False
             ).plot(**spec)
         return html.Div(dcc.Graph(figure=fig), id=ids.BDP_GRAPH)
 
