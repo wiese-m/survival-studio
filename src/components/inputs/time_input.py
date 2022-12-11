@@ -6,6 +6,8 @@ from src.components import ids
 
 
 def render(explainer: SurvExplainer) -> html.Div:
+    if not explainer.model_performance.can_predict_survival():
+        return html.Div()
     times = explainer.model_performance.proper_times
 
     return html.Div(

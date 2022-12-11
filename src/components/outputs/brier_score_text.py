@@ -12,6 +12,8 @@ def render(app: Dash, explainer: SurvExplainer) -> html.Div:
         Input(ids.TIME_INPUT, 'value')
     )
     def update_brier_score(time) -> str:
+        if not explainer.model_performance.can_predict_survival():
+            return ''
         bs = explainer.model_performance.brier_score(time)
         return f'BS({time}) = {bs:.4f}'
 

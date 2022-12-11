@@ -11,7 +11,6 @@ from sksurv.metrics import (
 from explanation.tools.model_enum import SurvivalModel
 
 
-# todo: need to be changed if model cant predict survival function
 class ModelPerformance:
     def __init__(self, model, X_test: pd.DataFrame, y_test: np.ndarray) -> None:
         self.model = model
@@ -19,8 +18,14 @@ class ModelPerformance:
         self.y_test = y_test
         self.survs = self._get_survs()
 
+    def can_predict_survival(self):
+        return self._model_enum.can_predict_survival() and self._check_gbm_loss()
+
+    def _check_gbm_loss(self):
+        return False if self._model_enum.is_gbm() and self.model.loss_ != 'coxph' else True
+
     def _get_survs(self) -> np.ndarray:
-        return self.model.predict_survival_function(self.X_test) if self._model_enum.can_predict_survival() else None
+        return self.model.predict_survival_function(self.X_test) if self.can_predict_survival() else None
 
     def harrell_cindex(self, X: pd.DataFrame = None, y: np.ndarray = None) -> float:
         X = X if X is not None else self.X_test
@@ -79,6 +84,8 @@ class ModelPerformance:
 
     @property
     def _event_times(self) -> np.ndarray:
+        if self.survs is None:
+            return np.array([np.nan])
         return self.survs[0].x
 
     @property

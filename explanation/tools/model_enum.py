@@ -16,6 +16,9 @@ class SurvivalModel(Enum):
     NAIVE_SVM = 'NaiveSurvivalSVM'
     TREE = 'SurvivalTree'
 
+    def is_gbm(self) -> bool:
+        return self in [SurvivalModel.COMPWISE_GRAD_BOOST, SurvivalModel.GRAD_BOOST]
+
     def is_ensemble(self) -> bool:
         return self in [SurvivalModel.COMPWISE_GRAD_BOOST, SurvivalModel.GRAD_BOOST,
                         SurvivalModel.RSF, SurvivalModel.EST]
