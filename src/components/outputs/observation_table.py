@@ -1,4 +1,3 @@
-import pandas as pd
 from dash import Dash, html, dash_table
 from dash.dependencies import Input, Output
 
@@ -25,16 +24,3 @@ def render(app: Dash, explainer: SurvExplainer) -> html.Div:
         return html.Div(children=children, id=ids.OBSERVATION_TABLE)
 
     return html.Div(id=ids.OBSERVATION_TABLE)
-
-
-def generate_table(dataframe: pd.DataFrame, max_rows: int = 10) -> html.Table:
-    return html.Table([
-        html.Thead(
-            html.Tr([html.Th(col) for col in dataframe.columns])
-        ),
-        html.Tbody([
-            html.Tr([
-                html.Td(dataframe.iloc[i][col]) for col in dataframe.columns
-            ]) for i in range(min(len(dataframe), max_rows))
-        ])
-    ])
