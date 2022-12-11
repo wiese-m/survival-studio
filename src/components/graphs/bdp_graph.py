@@ -7,6 +7,7 @@ from src.components import ids
 from src.components.visualization_options import spec
 
 
+# Make interactive Break Down analysis plot for chosen observation
 def render(app: Dash, explainer: SurvExplainer) -> html.Div:
 
     @app.callback(

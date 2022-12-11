@@ -4,6 +4,7 @@ from explanation.explainer import SurvExplainer
 from src.components import ids
 
 
+# Make time slider for Integrated Brier Score calculation
 def render(explainer: SurvExplainer) -> html.Div:
     if not explainer.model_performance.can_predict_survival():
         return html.Div()

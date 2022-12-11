@@ -6,6 +6,7 @@ from explanation.explainer import SurvExplainer
 from src.components import ids
 
 
+# Make observation dropdown
 def render(explainer: SurvExplainer) -> html.Div:
     all_observations = explainer.X.index
 

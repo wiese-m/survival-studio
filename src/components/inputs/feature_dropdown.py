@@ -6,6 +6,7 @@ from explanation.explainer import SurvExplainer
 from src.components import ids
 
 
+# Make feature dropdown
 def render(explainer: SurvExplainer) -> html.Div:
     all_features = explainer.X.columns
 

@@ -5,6 +5,7 @@ from explanation.explainer import SurvExplainer
 from src.components import ids
 
 
+# Make output for Brier Score value based on textbox
 def render(app: Dash, explainer: SurvExplainer) -> html.Div:
 
     @app.callback(

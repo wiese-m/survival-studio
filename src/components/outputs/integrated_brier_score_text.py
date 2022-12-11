@@ -5,6 +5,7 @@ from explanation.explainer import SurvExplainer
 from src.components import ids
 
 
+# Make output for Integrated Brier Score value based on time slider
 def render(app: Dash, explainer: SurvExplainer) -> html.Div:
 
     @app.callback(

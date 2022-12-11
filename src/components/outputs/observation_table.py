@@ -6,6 +6,7 @@ from explanation.tools import utils as ut
 from src.components import ids
 
 
+# Make pretty table with observation info (values of specific features)
 def render(app: Dash, explainer: SurvExplainer) -> html.Div:
 
     @app.callback(

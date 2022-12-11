@@ -8,6 +8,7 @@ from .inputs import feature_dropdown, observation_dropdown, time_input, time_sli
 from .outputs import brier_score_text, integrated_brier_score_text, observation_table
 
 
+# Define application layout using grid (5 x 3)
 def create_layout(app: Dash, explainer: SurvExplainer) -> html.Div:
     return html.Div(
         [

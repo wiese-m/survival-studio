@@ -6,6 +6,7 @@ from src.components import ids
 from src.components.visualization_options import spec
 
 
+# Make interactive Partial Dependence plot for chosen feature
 def render(app: Dash, explainer: SurvExplainer) -> html.Div:
 
     @app.callback(
