@@ -1,3 +1,4 @@
+from copy import copy
 from itertools import combinations, compress
 from typing import List, Dict, Set
 
@@ -77,7 +78,8 @@ class BreakDown:
         return [f for f in list(self._single_scores.keys()) + signif_interactions if f not in to_remove]
 
     def _get_sorted_proper_scores(self, reverse: bool = True) -> Dict[str, float]:
-        all_scores = self._single_scores | self._pairwise_scores
+        all_scores = copy(self._single_scores)
+        all_scores.update(self._pairwise_scores)
         all_scores = {feature: score for feature, score in all_scores.items() if feature in self._get_proper_features()}
         return self._sorted_dict_by_abs_values(all_scores, reverse)
 
