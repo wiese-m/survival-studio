@@ -10,11 +10,6 @@ def main() -> None:
     app = Dash(__name__, external_stylesheets=[BOOTSTRAP])
     app.title = "Survival Studio"
     app.layout = create_layout(app, explainer)
-
-    # Webservice deployment
-    application = app
-    server = application.server
-
     app.run()
 
 
