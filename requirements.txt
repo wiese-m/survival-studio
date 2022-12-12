@@ -58,3 +58,4 @@ typer==0.4.0
 wasabi==0.9.0
 Werkzeug==2.2.2
 zipp==3.11.0
+gunicorn==20.1.0
