@@ -26,7 +26,7 @@ MarkupSafe==2.1.1
 murmurhash==1.0.6
 numba==0.56.4
 numexpr==2.8.4
-numpy==1.23.5
+numpy==1.21.6
 osqp==0.6.2.post8
 packaging==22.0
 pandas==1.5.2
