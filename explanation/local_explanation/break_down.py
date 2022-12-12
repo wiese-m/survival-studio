@@ -1,4 +1,5 @@
 from itertools import combinations, compress
+from typing import List, Dict, Set
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -37,15 +38,15 @@ class BreakDown:
     def _get_mean_prediction(self) -> float:
         return self.model.predict(self.X).mean()
 
-    def _get_expected_value_for_features(self, features: list[str]) -> float:
+    def _get_expected_value_for_features(self, features: List[str]) -> float:
         X = self.X.copy()
         X[features] = self.new_observation[features].squeeze()
         return self.model.predict(X).mean()
 
-    def _get_single_scores(self) -> dict[str, float]:
-        return {feature: self._get_delta({feature}, {}) for feature in self.X.columns}
+    def _get_single_scores(self) -> Dict[str, float]:
+        return {feature: self._get_delta({feature}, set()) for feature in self.X.columns}
 
-    def _get_delta(self, L: {str}, J: {str}) -> float:
+    def _get_delta(self, L: Set[str], J: Set[str]) -> float:
         assert all([x in self.X.columns for x in L])
         assert all([x in self.X.columns for x in J])
         assert L.isdisjoint(J)
@@ -56,12 +57,12 @@ class BreakDown:
         return self.model.predict(X_copy1).mean() - self.model.predict(X_copy2).mean()
 
     def _get_interaction_delta(self, i: str, j: str) -> float:
-        return self._get_delta({i, j}, {}) - self._get_delta({i}, {}) - self._get_delta({j}, {})
+        return self._get_delta({i, j}, set()) - self._get_delta({i}, set()) - self._get_delta({j}, set())
 
-    def _get_pairwise_scores(self) -> dict[str, float]:
+    def _get_pairwise_scores(self) -> Dict[str, float]:
         return {f'{i}:{j}': self._get_interaction_delta(i, j) for i, j in combinations(self.X.columns, 2)}
 
-    def _get_signif_interactions(self) -> list[str]:
+    def _get_signif_interactions(self) -> List[str]:
         signif_interactions = []
         for feature, score in self._pairwise_scores.items():
             single_features = feature.split(':')
@@ -70,12 +71,12 @@ class BreakDown:
                 signif_interactions.append(feature)
         return signif_interactions
 
-    def _get_proper_features(self) -> list[str]:
+    def _get_proper_features(self) -> List[str]:
         signif_interactions = self._get_signif_interactions()
         to_remove = [feature for feature in self._single_scores if any(feature in i for i in signif_interactions)]
         return [f for f in list(self._single_scores.keys()) + signif_interactions if f not in to_remove]
 
-    def _get_sorted_proper_scores(self, reverse: bool = True) -> dict[str, float]:
+    def _get_sorted_proper_scores(self, reverse: bool = True) -> Dict[str, float]:
         all_scores = self._single_scores | self._pairwise_scores
         all_scores = {feature: score for feature, score in all_scores.items() if feature in self._get_proper_features()}
         return self._sorted_dict_by_abs_values(all_scores, reverse)
@@ -93,7 +94,7 @@ class BreakDown:
         vimp_df['break_down'] = vimp_df.vimp.cumsum()
         return vimp_df
 
-    def _get_vimp(self) -> dict[str, float]:
+    def _get_vimp(self) -> Dict[str, float]:
         vimp = {}
         previous_features = []
         features = self._get_proper_features_for_vimp(self._get_sorted_proper_scores())
@@ -117,7 +118,7 @@ class BreakDown:
                 result.append(x)
         return result
 
-    def _get_proper_features_for_vimp(self, sorted_proper_scores: dict[str, float]) -> list[str]:
+    def _get_proper_features_for_vimp(self, sorted_proper_scores: Dict[str, float]) -> List[str]:
         checks = []
         features = list(sorted_proper_scores.keys())
         for i, feature in enumerate(features):
@@ -131,5 +132,5 @@ class BreakDown:
         return [feature for feature in features if feature is not None]
 
     @staticmethod
-    def _negate(boolean_list: list[bool]) -> list[bool]:
+    def _negate(boolean_list: List[bool]) -> List[bool]:
         return [not i for i in boolean_list]
