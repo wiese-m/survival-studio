@@ -6,6 +6,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 
+# For method details, see EMA (Biecek and Burzykowski 2021)
 class BreakDown:
     def __init__(self, model, X: pd.DataFrame, new_observation: pd.DataFrame, allow_interactions: bool) -> None:
         self._allow_interactions = allow_interactions
@@ -17,6 +18,7 @@ class BreakDown:
         self._pairwise_scores = self._get_pairwise_scores() if allow_interactions else {}
         self.result = self._get_results()
 
+    # Generate waterfall plot for Break Down analysis for given observation
     def plot(self, show: bool = False, **kwargs) -> go.Figure:
         fig = go.Figure()
         measure = ['relative'] * self.result.shape[0]
@@ -36,17 +38,15 @@ class BreakDown:
             fig.show()
         return fig
 
+    # Get mean prediction for all data (v_0)
     def _get_mean_prediction(self) -> float:
         return self.model.predict(self.X).mean()
 
-    def _get_expected_value_for_features(self, features: List[str]) -> float:
-        X = self.X.copy()
-        X[features] = self.new_observation[features].squeeze()
-        return self.model.predict(X).mean()
-
+    # Get scores for every feature (no interactions)
     def _get_single_scores(self) -> Dict[str, float]:
         return {feature: self._get_delta({feature}, set()) for feature in self.X.columns}
 
+    # Compute delta (expected value) for two given sets of features
     def _get_delta(self, L: Set[str], J: Set[str]) -> float:
         assert all([x in self.X.columns for x in L])
         assert all([x in self.X.columns for x in J])
@@ -57,12 +57,15 @@ class BreakDown:
             X_copy2[list(J)] = self.new_observation[list(J)].squeeze()
         return self.model.predict(X_copy1).mean() - self.model.predict(X_copy2).mean()
 
+    # Get interaction score for two given features
     def _get_interaction_delta(self, i: str, j: str) -> float:
         return self._get_delta({i, j}, set()) - self._get_delta({i}, set()) - self._get_delta({j}, set())
 
+    # Get scores for all interactions
     def _get_pairwise_scores(self) -> Dict[str, float]:
         return {f'{i}:{j}': self._get_interaction_delta(i, j) for i, j in combinations(self.X.columns, 2)}
 
+    # Get significant interactions based on scores
     def _get_signif_interactions(self) -> List[str]:
         signif_interactions = []
         for feature, score in self._pairwise_scores.items():
@@ -72,11 +75,13 @@ class BreakDown:
                 signif_interactions.append(feature)
         return signif_interactions
 
+    # Keep interactions with higher score than single features
     def _get_proper_features(self) -> List[str]:
         signif_interactions = self._get_signif_interactions()
         to_remove = [feature for feature in self._single_scores if any(feature in i for i in signif_interactions)]
         return [f for f in list(self._single_scores.keys()) + signif_interactions if f not in to_remove]
 
+    # Get proper ordering based on scores
     def _get_sorted_proper_scores(self, reverse: bool = True) -> Dict[str, float]:
         all_scores = copy(self._single_scores)
         all_scores.update(self._pairwise_scores)
@@ -87,6 +92,7 @@ class BreakDown:
     def _sorted_dict_by_abs_values(d: dict, reverse: bool) -> dict:
         return dict(sorted(d.items(), key=lambda i: abs(i[1]), reverse=reverse))
 
+    # Make DataFrame with Break Down analysis results
     def _get_results(self) -> pd.DataFrame:
         vimp_df = pd.DataFrame([self._get_vimp()]).T[::-1].reset_index() \
             .rename(columns={'index': 'variable_name', 0: 'vimp'})
@@ -96,6 +102,7 @@ class BreakDown:
         vimp_df['break_down'] = vimp_df.vimp.cumsum()
         return vimp_df
 
+    # Compute contribution (vimp) for every feature
     def _get_vimp(self) -> Dict[str, float]:
         vimp = {}
         previous_features = []
@@ -120,6 +127,7 @@ class BreakDown:
                 result.append(x)
         return result
 
+    # Handle overlapping interactions (ex. A:B & A:C)
     def _get_proper_features_for_vimp(self, sorted_proper_scores: Dict[str, float]) -> List[str]:
         checks = []
         features = list(sorted_proper_scores.keys())

@@ -18,20 +18,27 @@ class ModelPerformance:
         self.y_test = y_test
         self.survs = self._get_survs()
 
+    # Check if the model is capable of predicting survival probabilities
     def can_predict_survival(self):
         return self._model_enum.can_predict_survival() and self._check_gbm_loss()
 
+    # Check if the model is a Gradient Boosting Machine (GBM) with 'coxph' loss function
     def _check_gbm_loss(self):
         return False if self._model_enum.is_gbm() and self.model.loss_ != 'coxph' else True
 
+    # Compute the predicted survival function for the model (if possible)
     def _get_survs(self) -> np.ndarray:
         return self.model.predict_survival_function(self.X_test) if self.can_predict_survival() else None
 
+    # Compute the Harrell's concordance index for the model
+    # This metric measures the ability of the model to correctly rank survival times
     def harrell_cindex(self, X: pd.DataFrame = None, y: np.ndarray = None) -> float:
         X = X if X is not None else self.X_test
         y = y if y is not None else self.y_test
         return self.model.score(X, y)
 
+    # Compute the Uno's concordance index for the model
+    # This metric is similar to Harrell's C index but also accounts for the uncertainty of the predicted survival times
     def uno_cindex(self, y_train: np.ndarray = None, y_test: np.ndarray = None,
                    tau: float = None, tied_tol: float = 1e-8) -> float:
         y_train = y_train if y_train is not None else self.y_test
@@ -40,6 +47,8 @@ class ModelPerformance:
             concordance_index_ipcw(y_train, y_test, self.model.predict(self.X_test), tau, tied_tol)
         return cindex
 
+    # Compute the Brier score for the model at a given time
+    # The Brier score is a measure of the model's accuracy in predicting the probability of survival
     def brier_score(self, time, y_train: np.ndarray = None, y_test: np.ndarray = None) -> float:
         if self.survs is None:
             return np.nan
@@ -49,6 +58,8 @@ class ModelPerformance:
         times, score = brier_score(y_train, y_test, preds, time)
         return score[0]
 
+    # Compute the integrated Brier score for the model over a given set of times
+    # This is a weighted average of the Brier scores at each time
     def integrated_brier_score(self, times=None, y_train: np.ndarray = None, y_test: np.ndarray = None) -> float:
         if self.survs is None:
             return np.nan
@@ -58,6 +69,7 @@ class ModelPerformance:
         preds = np.asarray([[surv_func(t) for t in times] for surv_func in self.survs])
         return integrated_brier_score(y_train, y_test, preds, times)
 
+    # Generate a DataFrame containing the Brier scores at each time
     def _get_bs_plot_df(self) -> pd.DataFrame:
         if self.survs is None:
             return pd.DataFrame()
@@ -66,6 +78,7 @@ class ModelPerformance:
         df['brier_score'] = [self.brier_score(t) for t in df.time]
         return df
 
+    # Plot prediction error curve over time based on Brier score
     def plot_brier_score(self, show: bool = False, **kwargs) -> go.Figure:
         plot_df = self._get_bs_plot_df()
         if plot_df.empty:

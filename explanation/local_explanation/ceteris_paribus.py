@@ -15,36 +15,50 @@ class CeterisParibus:
 
     @property
     def new_prediction(self) -> float:
+        # Return the prediction made by the model on the current new observation
         return self.model.predict(self._new_observation)[0]
 
     def fit(self, feature: str, value) -> None:
+        # Set the value of the specified feature in the new observation
         self._new_observation[feature] = value
 
     @staticmethod
     def _prepare_values(X: pd.DataFrame, feature: str) -> np.ndarray:
+        # Prepare a range of values for the specified feature, depending on its data type
         if X[feature].dtype in (np.int64, int):
+            # If the feature is integer, create a range of unique integer values
             min_, max_ = X[feature].min(), X[feature].max()
             return np.unique(np.linspace(min_, max_, 100, dtype=int))
         elif X[feature].dtype in (np.float64, float):
+            # If the feature is float, create a range of float values
             min_, max_ = X[feature].min(), X[feature].max()
             return np.linspace(min_, max_, 100)
+        # If the feature is not numeric, return the unique values of the feature
         return X[feature].unique()
 
     def _get_result(self, X: pd.DataFrame, feature: str) -> pd.DataFrame:
+        # Perform Ceteris Paribus analysis and return the result as a DataFrame
         data = {feature: [], 'risk_score': []}
-        for value in self._prepare_values(X, feature):
+        # Add exact feature value for chosen observation to values (linspace)
+        values = list(self._prepare_values(X, feature)) + [self._new_observation[feature].squeeze()]
+        for value in values:
+            # For each value in the range of values prepared for the specified feature,
+            # set the value of the feature in the new observation and get the prediction
             self.fit(feature, value)
             data[feature].append(value)
             data['risk_score'].append(self.new_prediction)
         return pd.DataFrame(data).sort_values(feature).reset_index(drop=True)
 
     def plot(self, is_categorical: bool = False, show: bool = False, **kwargs) -> go.Figure:
+        # Create a plot showing the Ceteris Paribus analysis results
         if not is_categorical:
+            # If the specified feature is not categorical, create a scatter plot
             trace0 = go.Scatter(x=self.original_observation[self.feature],
                                 y=pd.Series(self.original_prediction), name='')
             trace1 = go.Scatter(x=self.result[self.feature], y=self.result['risk_score'],
                                 name='', marker=dict(opacity=0))
         else:
+            # If the specified feature is categorical, create a bar plot
             trace0 = go.Bar(y=self.original_observation[self.feature], x=pd.Series(self.original_prediction),
                             name='', offsetgroup=0, orientation='h')
             trace1 = go.Bar(y=self.result[self.feature], x=self.result['risk_score'],

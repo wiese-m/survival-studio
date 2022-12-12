@@ -13,6 +13,7 @@ class Visualizer:
         self.X = X
         self.observation = observation
 
+    # Plot survival function estimated by the model
     def plot_surv(self, observation: pd.DataFrame = None, show: bool = False, **kwargs) -> go.Figure:
         observation = self.observation if observation is None else observation
         surv = self.model.predict_survival_function(observation)
@@ -24,6 +25,7 @@ class Visualizer:
             fig.show()
         return fig
 
+    # Plot cumulative hazard function estimated by the model
     def plot_chf(self, observation: pd.DataFrame = None, show: bool = False, **kwargs) -> go.Figure:
         observation = self.observation if observation is None else observation
         chf = self.model.predict_cumulative_hazard_function(observation)
@@ -35,6 +37,7 @@ class Visualizer:
             fig.show()
         return fig
 
+    # Plot feature distribution (histogram) for given feature
     def plot_feature_distribution(self, feature: str, nbins: int = None, show: bool = False, **kwargs) -> go.Figure:
         fig = px.histogram(self.X, x=feature, nbins=nbins)
         fig.update_traces(marker_line_width=1, marker_line_color='black')
@@ -43,6 +46,7 @@ class Visualizer:
             fig.show()
         return fig
 
+    # Plot prediction distribution (histogram)
     def plot_risk_scores_distribution(self, nbins: int = None, show: bool = False, **kwargs) -> go.Figure:
         fig = px.histogram(self._get_risk_scores(), nbins=nbins)
         fig.update_xaxes(title_text='risk score')
